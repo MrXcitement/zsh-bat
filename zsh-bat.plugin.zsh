@@ -3,8 +3,8 @@
 # March 30th 2023
 
 if [[ ! $(whence bat) ]]; then
-    print "zsh-bat plugin requires the 'bat' cli"
-    exit
+    print "zsh bat plugin: 'bat' not found. Please install 'bat' to use this plugin."
+    return 1
 fi
 
 function xterm_background_brightness() {

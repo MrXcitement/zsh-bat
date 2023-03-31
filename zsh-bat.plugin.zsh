@@ -2,6 +2,29 @@
 # Mike Barker
 # March 30th 2023
 
+# check if on debian, version 11 or earlier
+local DEB_VER=$(cat /etc/debian_version 2>/dev/null)
+if [[ ! -z $DEB_VER ]] && (( $DEB_VER < 12 )); then
+    # get batcat install location
+    local BATCAT_PATH=$(command -v batcat 2>/dev/null)
+    # is batcat if installed
+    if [[ ! -z "$BATCAT_PATH" ]]; then
+        # is link batcat to bat does not exist 
+        if [[ ! -f "$HOME/bin/bat" ]]; then
+            print "zsh bat plugin: system is Debian 11 or earlier"
+            print "  - symlink $BATCAT_PATH to $HOME/bin/bat"
+            print "  - if 'bat' not found, add $HOME/bin to your path."
+            # if ~/bin does not exist, create it
+            [[ ! -d "$HOME/bin" ]] && mkdir "$HOME/bin"
+            # link batcat to bat
+            ln -s "$BATCAT_PATH" "$HOME/bin/bat"
+            # add ~/bin to path this time only
+            export PATH=$HOME/bin:$PATH
+        fi
+    fi
+fi
+
+# if bat is not found, display message and return
 if [[ ! $(whence bat) ]]; then
     print "zsh bat plugin: 'bat' not found. Please install 'bat' to use this plugin."
     return 1

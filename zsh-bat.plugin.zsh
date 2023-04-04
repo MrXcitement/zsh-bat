@@ -2,45 +2,28 @@
 # Mike Barker
 # March 30th 2023
 
+export BAT_CMD=bat
+
 # check if on debian, version 11 or earlier
-local DEB_VER=$(cat /etc/debian_version 2>/dev/null)
+DEB_VER=$(cat /etc/debian_version 2>/dev/null)
 if [[ ! -z $DEB_VER ]] && (( $DEB_VER < 12 )); then
-    # get batcat install location
-    local BATCAT_PATH=$(command -v batcat 2>/dev/null)
-    # is batcat if installed
-    if [[ ! -z "$BATCAT_PATH" ]]; then
-        # is link batcat to bat does not exist 
-        if [[ ! -f "$HOME/bin/bat" ]]; then
-            print "zsh bat plugin: system is Debian 11 or earlier"
-            print "  - symlink $BATCAT_PATH to $HOME/bin/bat"
-            print "  - if 'bat' not found, add $HOME/bin to your path."
-            # if ~/bin does not exist, create it
-            [[ ! -d "$HOME/bin" ]] && mkdir "$HOME/bin"
-            # link batcat to bat
-            ln -s "$BATCAT_PATH" "$HOME/bin/bat"
-            # add ~/bin to path this time only
-            export PATH=$HOME/bin:$PATH
-        fi
-    fi
+    export BAT_CMD=batcat
 fi
 
 # if bat is not found, display message and return
-if [[ ! $(whence bat) ]]; then
+if [[ ! $(whence $BAT_CMD) ]]; then
     print "zsh bat plugin: 'bat' not found. Please install 'bat' to use this plugin."
     return 1
 fi
 
-function xterm_background_brightness() {
+function _zsh_bat_get_background_brightness() {
     local BG_COLOR
-    local RED
-    local GREEN
-    local BLUE
 
-    BG_COLOR=$(xtermcontrol --get-bg 2>/dev/null)
+    BG_COLOR=$(xtermcontrol --get-bg)
     if [[ $BG_COLOR[0,3] == 'rgb' ]]; then
-        RED=$(( 16#$BG_COLOR[5,8] ))
-        GREEN=$(( 16#$BG_COLOR[10,13] ))
-        BLUE=$(( 16#$BG_COLOR[15,18] ))
+        local RED=$(( 16#$BG_COLOR[5,8] ))
+        local GREEN=$(( 16#$BG_COLOR[10,13] ))
+        local BLUE=$(( 16#$BG_COLOR[15,18] ))
         if (( $RED > 32767 )) || (( $GREEN > 32767 )) || (( $BLUE > 32767 )); then
             print "light"
         else
@@ -49,28 +32,33 @@ function xterm_background_brightness() {
     fi
 }
 
+function _zsh_bat_get_theme() {
+    local THEME
+
+    case $(_zsh_bat_get_background_brightness) in
+        "dark")
+            THEME=${BAT_THEME_DARK:-"Monokai Extended"}
+            ;;
+        "light")
+            THEME=${BAT_THEME_LIGHT:-"Monokai Extended Light"}
+            ;;
+    esac
+    print $THEME
+}
+
 function bat() {
     local THEME
 
     args=("$@")
-    if ! (($args[(I)--list*])) && ! (($args[(I)--theme*])); then
-        case $(xterm_background_brightness) in
-            "dark")
-                THEME=${BAT_THEME_DARK:-"Monokai Extended"}
-                ;;
-            "light")
-                THEME=${BAT_THEME_LIGHT:-"Monokai Extended Light"}
-                ;;
-        esac
-        THEME=${BAT_THEME:-$THEME}
+    if ! (($args[(I)--list*])) && ! (($args[(I)--theme*])) && ! (( ${+BAT_THEME} )); then
+        THEME=$(_zsh_bat_get_theme $@)
     fi
-
-    if [[ ! -z "$THEME" ]]; then
-        BAT_THEME=$THEME command bat $@
+    if [[ $THEME ]]; then
+        command $BAT_CMD --theme=$THEME $@
     else
-        command bat $@
+        command $BAT_CMD $@
     fi
 }
 
-alias cat=bat
-export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+alias cat=$BAT_CMD
+export MANPAGER="${0:A:h}/zsh-bat-manpager.zsh"

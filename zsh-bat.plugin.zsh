@@ -2,16 +2,9 @@
 # Mike Barker
 # March 30th 2023
 
-export BAT_CMD=bat
-
-# check if on debian, version 11 or earlier
-DEB_VER=$(cat /etc/debian_version 2>/dev/null)
-if [[ ! -z $DEB_VER ]] && (( $DEB_VER < 12 )); then
-    export BAT_CMD=batcat
-fi
 
 # if bat is not found, display message and return
-if [[ ! $(whence $BAT_CMD) ]]; then
+if [[ ! $(whence bat) ]]; then
     print "zsh bat plugin: 'bat' not found. Please install 'bat' to use this plugin."
     return 1
 fi
@@ -34,7 +27,6 @@ function _zsh_bat_get_background_brightness() {
 
 function _zsh_bat_get_theme() {
     local THEME
-
     case $(_zsh_bat_get_background_brightness) in
         "dark")
             THEME=${BAT_THEME_DARK:-"Monokai Extended"}
@@ -43,22 +35,22 @@ function _zsh_bat_get_theme() {
             THEME=${BAT_THEME_LIGHT:-"Monokai Extended Light"}
             ;;
     esac
-    print $THEME
+    print ${BAT_THEME:-$THEME}
 }
 
 function bat() {
     local THEME
 
     args=("$@")
-    if ! (($args[(I)--list*])) && ! (($args[(I)--theme*])) && ! (( ${+BAT_THEME} )); then
+    if ! (($args[(I)--list*])) && ! (($args[(I)--theme*])); then
         THEME=$(_zsh_bat_get_theme $@)
     fi
     if [[ $THEME ]]; then
-        command $BAT_CMD --theme=$THEME $@
+        command bat --theme=$THEME $@
     else
-        command $BAT_CMD $@
+        command bat $@
     fi
 }
 
-alias cat=$BAT_CMD
+alias cat=bat
 export MANPAGER="${0:A:h}/zsh-bat-manpager.zsh"

@@ -37,7 +37,19 @@ If the *dark* *light* mode detection is not working, your terminal may not suppo
 - Do you have the `xtermcontrol` program installed and in your path?
 - What does `xtermcontrol --get-bg` command return?
     - The return value should be a string with the following format: rgb:rrrr/gggg/bbbb
-- What does the function `xterm_background_brightness` return.
-    - The return value should be a string of either *dark*, *light*, or an empty string. An empty string is returned if the background brightness can't be determined.
-- The selected theme will be provided using the BAT_THEME environment variable.
-    - To see what theme was selected run `bat --diagnostics | grep BAT_THEME'`
+- What does the function `_zsh_bat_get_background_brightness` return?
+    - The return value should be a string of either *dark*, *light*. 
+    - An empty string is returned if the background brightness can't be determined.
+- What does the function `_zsh_bat_get_theme` return?
+    - If BAT_THEME is defined, it should return it's value.
+    - If `_zsh_bat_get_background_brightness` returned *dark*
+        - If BAT_THEME_DARK is undefiened, it should return *Monokai Extended*
+        - If BAT_THEME_DARK is defined, it should return it's value.
+    - If `_zsh_bat_get_background_brightness` returned *light*
+        - If BAT_THEME_LIGHT is undefiened, it should return *Monokai Extended Light*
+        - If BAT_THEME_LIGHT is defined, it should return it's value.
+    - If `_zsh_bat_get_background_brightness` returns an empty string.
+        - It should return an empty string
+- The selected theme will be provided using the --theme parameter.
+    - To see what theme was selected run `bat --diagnostics | head -n 20'`
+    - The Command-line section should show that the --theme= parameter was set.
